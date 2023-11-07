@@ -1,0 +1,42 @@
+Root := OptionalSpace predicate=Predicate OptionalSpace $
+
+Predicate := compound=CompoundPredicate | comparison=ComparisonPredicate | '\(' OptionalSpace group=Predicate OptionalSpace '\)' | 'TRUE' | 'FALSE'
+
+CompoundPredicate := lhs=Predicate Space 'AND' Space rhs=Predicate | lhs=Predicate Space 'OR' Space rhs=Predicate | 'NOT' Space base=Predicate
+
+ComparisonPredicate := lhs=Expression Space operator=ComparisonOperator Space rhs=Expression | modifier=AggregateQualifier Space comparison=ComparisonPredicate
+ComparisonOperator := '=' | '!=' | 'CONTAINS' | 'IN' | '>' | '>=' | '<' | '<='
+AggregateQualifier := 'ANY' | 'ALL'
+
+
+Expression := '\(' OptionalSpace group=Expression OptionalSpace '\)' | index=IndexExpression | property=PropertyExpression | value=ValueExpression | conditional=ConditionalExpression | subquery=SubqueryExpression
+
+IndexExpression := base=Expression OptionalSpace '\[' OptionalSpace index={'FIRST' | 'LAST' | 'SIZE'} OptionalSpace '\]'
+
+PropertyExpression := base={ value=Expression OptionalSpace '\.' OptionalSpace }? propertyName=Identifier
+
+ValueExpression := StringValueExpression | NumericValueExpression | VariableExpression | 'NULL' | 'TRUE' | 'FALSE' | ObjectLiteralExpression | ArrayLiteralExpression
+
+StringValueExpression := '"' firstSegment=StringValueExpressionLiteralSegment? remainingSegments={ templateSegment=StringValueExpressionTemplateSegment literalSegment=StringValueExpressionLiteralSegment? }* '"' 
+StringValueExpressionLiteralSegment := literal='([^"$\\]|\\"|\\\$|\\\\)*'
+StringValueExpressionTemplateSegment := '\$\{' OptionalSpace template=Expression OptionalSpace '\}' 
+
+NumericValueExpression := integer='(0|[1-9][0-9]*)' | float='(0|[1-9][0-9]*)(\.[0-9]+)'
+
+VariableExpression := '\$' identifier=Identifier
+
+ObjectLiteralExpression := '\{' OptionalSpace properties={ first=ObjectLiteralExpressionProperty remaining={ OptionalSpace ',' OptionalSpace property=ObjectLiteralExpressionProperty }* OptionalSpace }? '\}'
+ObjectLiteralExpressionProperty := key=Identifier OptionalSpace ':' OptionalSpace value=Expression
+
+ArrayLiteralExpression := '\[' OptionalSpace elements={ first=Expression remaining={ OptionalSpace ',' OptionalSpace element=Expression }* OptionalSpace }? '\]'
+
+ConditionalExpression := 'TERNARY' OptionalSpace '\(' OptionalSpace test=Predicate OptionalSpace ',' OptionalSpace trueBranch=Expression OptionalSpace ',' OptionalSpace falseBranch=Expression OptionalSpace '\)'
+
+SubqueryExpression := 'SUBQUERY' OptionalSpace '\(' OptionalSpace collection=Expression OptionalSpace ',' OptionalSpace variable=VariableExpression OptionalSpace ',' OptionalSpace filter=Predicate OptionalSpace '\)'
+
+Identifier := !ReservedWord value='[_a-zA-Z@][_a-zA-Z0-9/]*' | '#' value=ReservedWord
+
+ReservedWord := 'AND' | 'OR' | 'IN' | 'NOT' | 'ALL' | 'ANY' | 'SOME' | 'NONE' | 'LIKE' | 'CASEINSENSITIVE' | 'CI' | 'MATCHES' | 'CONTAINS' | 'BEGINSWITH' | 'ENDSWITH' | 'BETWEEN' | 'NULL' | 'NIL' | 'SELF' | 'TRUE' | 'YES' | 'FALSE' | 'NO' | 'FIRST' | 'LAST' | 'SIZE' | 'ANYKEY' | 'SUBQUERY' | 'FETCH' | 'CAST' | 'TRUE' | 'FALSEPREDICATE' | 'UTI-CONFORMS-TO' | 'UTI-EQUALS' | 'TERNARY'
+
+Space := '\s+'
+OptionalSpace := '\s*'
