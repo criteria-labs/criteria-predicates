@@ -26,30 +26,34 @@ export class ComparisonPredicate extends Predicate {
   }
 
   evaluate(value: any, bindings: Record<string, any>): boolean {
-    const comparator = (lhsValueExpression: any, rhsValueExpression: any) => {
+    const comparator = (lhs: any, rhs: any) => {
       switch (this.operator) {
         case 'equal':
-          return equal(lhsValueExpression, rhsValueExpression)
+          return equal(lhs, rhs)
         case 'not_equal':
-          return !equal(lhsValueExpression, rhsValueExpression)
+          return !equal(lhs, rhs)
         case 'contains':
-          for (const lhsValueExpressionElement of Array.from(lhsValueExpression)) {
-            return equal(lhsValueExpressionElement, rhsValueExpression)
+          for (const lhsElement of Array.from(lhs)) {
+            if (equal(lhsElement, rhs)) {
+              return true
+            }
           }
           return false
         case 'in':
-          for (const rhsValueExpressionElement of Array.from(rhsValueExpression)) {
-            return equal(lhsValueExpression, rhsValueExpressionElement)
+          for (const rhsElement of Array.from(rhs)) {
+            if (equal(lhs, rhsElement)) {
+              return true
+            }
           }
           return false
         case 'greater_than':
-          return lhsValueExpression > rhsValueExpression
+          return lhs > rhs
         case 'greater_than_or_equal':
-          return lhsValueExpression >= rhsValueExpression
+          return lhs >= rhs
         case 'less_than':
-          return lhsValueExpression < rhsValueExpression
+          return lhs < rhs
         case 'less_than_or_equal':
-          return lhsValueExpression <= rhsValueExpression
+          return lhs <= rhs
         default:
           assertNever(this.operator)
       }
