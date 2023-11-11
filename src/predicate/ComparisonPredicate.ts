@@ -1,5 +1,4 @@
 import { Expression } from '../expression/Expression'
-import { isCollection } from '../util/collection'
 import { equal } from '../util/equal'
 import { assertNever } from '../util/invariant'
 import { Predicate } from './Predicate'
@@ -34,17 +33,11 @@ export class ComparisonPredicate extends Predicate {
         case 'not_equal':
           return !equal(lhsValueExpression, rhsValueExpression)
         case 'contains':
-          if (!isCollection(lhsValueExpression)) {
-            return false
-          }
           for (const lhsValueExpressionElement of Array.from(lhsValueExpression)) {
             return equal(lhsValueExpressionElement, rhsValueExpression)
           }
           return false
         case 'in':
-          if (!isCollection(rhsValueExpression)) {
-            return false
-          }
           for (const rhsValueExpressionElement of Array.from(rhsValueExpression)) {
             return equal(lhsValueExpression, rhsValueExpressionElement)
           }
@@ -62,34 +55,32 @@ export class ComparisonPredicate extends Predicate {
       }
     }
 
-    const lhsOutput = this.lhs.evaluate(value, bindings)
-    const rhsOutput = this.rhs.evaluate(value, bindings)
+    try {
+      const lhsOutput = this.lhs.evaluate(value, bindings)
+      const rhsOutput = this.rhs.evaluate(value, bindings)
 
-    switch (this.modifier) {
-      case 'direct':
-        return comparator(lhsOutput, rhsOutput)
-      case 'any':
-        if (!isCollection(lhsOutput)) {
-          return false
-        }
-        for (const lhsOutputElement of Array.from(lhsOutput)) {
-          if (comparator(lhsOutputElement, rhsOutput)) {
-            return true
+      switch (this.modifier) {
+        case 'direct':
+          return comparator(lhsOutput, rhsOutput)
+        case 'any':
+          for (const lhsOutputElement of Array.from(lhsOutput)) {
+            if (comparator(lhsOutputElement, rhsOutput)) {
+              return true
+            }
           }
-        }
-        return false
-      case 'all':
-        if (!isCollection(lhsOutput)) {
           return false
-        }
-        for (const lhsOutputElement of Array.from(lhsOutput)) {
-          if (comparator(lhsOutputElement, rhsOutput)) {
-            return false
+        case 'all':
+          for (const lhsOutputElement of Array.from(lhsOutput)) {
+            if (!comparator(lhsOutputElement, rhsOutput)) {
+              return false
+            }
           }
-        }
-        return true
-      default:
-        assertNever(this.modifier, `Invalid modifier '${this.modifier}'`)
+          return true
+        default:
+          assertNever(this.modifier, `Invalid modifier '${this.modifier}'`)
+      }
+    } catch {
+      return false
     }
   }
 
